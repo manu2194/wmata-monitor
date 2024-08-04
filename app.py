@@ -1,12 +1,35 @@
-import os
-from dotenv import load_dotenv
-from wmata_locator import WmataLocator
+import argparse
 import logging
-logging.basicConfig(level = logging.INFO)
-logger = logging.getLogger()
+from wmata_locator import WmataLocator
+from dotenv import load_dotenv
+import os
+import json
 
-load_dotenv()
+def main():
+  # Load environment variables
+  load_dotenv()
+  API_KEY = os.getenv('WMATA_API_KEY')
 
-API_KEY = os.getenv('WMATA_API_KEY')
+  # Configure argument parser
+  parser = argparse.ArgumentParser(description="WMATA station locator")
+  parser.add_argument("address", type=str, help="Starting address for search")
+  parser.add_argument(
+      "-l", "--log_level", type=str, default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+      help="Set logging level (default: INFO)"
+  )
 
-locator = WmataLocator(API_KEY, '607 13th St NW, Washington, DC 20005')
+  args = parser.parse_args()
+
+  # Configure logging
+  logging.basicConfig(level=getattr(logging, args.log_level))
+  logger = logging.getLogger()
+
+  # Create WmataLocator object
+  locator = WmataLocator(API_KEY, args.address)
+
+  train_predictions = locator.find_closest_train_prediction()
+
+  print(json.dumps(train_predictions, indent=4))
+
+if __name__ == "__main__":
+  main()
