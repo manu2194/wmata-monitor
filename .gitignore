@@ -164,3 +164,4 @@ cython_debug/
 
 # code specific
 .geolocator-cache.json
+playground.py
