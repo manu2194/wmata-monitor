@@ -1,5 +1,5 @@
 import json
-import time
+from datetime import datetime
 import logging
 import requests
 from geopy.distance import geodesic
@@ -88,4 +88,10 @@ class WmataLocator:
             for dest, times in destinations.items():
                 line_map[line][dest] = sorted(line_map[line][dest], key=lambda x: (x is None, x))
         
-        return line_map
+        # current timestamp
+        now = datetime.now().strftime(r'%m/%d, %H:%M:%S')
+
+        result_dict = {}
+        result_dict['lines'] = line_map
+        result_dict['timestamp'] = now
+        return result_dict
