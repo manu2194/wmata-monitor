@@ -59,7 +59,7 @@ class WmataLocator:
             destination = train["Destination"]
 
             # convert "Min" ( minutes ) to something integer
-            time = None
+            time = 'N'
             if min.lower() == 'arr':
                 time = 0
             else:
@@ -86,10 +86,10 @@ class WmataLocator:
         logger.info(f'Found lines {",".join(list(line_map.keys()))} for {self.closest_station_name}')
         for line, destinations in line_map.items():
             for dest, times in destinations.items():
-                line_map[line][dest] = sorted(line_map[line][dest], key=lambda x: (x is None, x))
+                line_map[line][dest] = sorted(line_map[line][dest], key=lambda x: (x is None or x == 'N', x))
         
         # current timestamp
-        now = datetime.now().strftime(r'%m/%d, %H:%M:%S')
+        now = datetime.now().isoformat()
 
         result_dict = {}
         result_dict['line'] = line_map
