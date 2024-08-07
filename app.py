@@ -11,7 +11,7 @@ def convert_for_esp32_led_matrix_64_32(train_predictions):
   result = []
   lines = train_predictions['line']
   timestamp = train_predictions['timestamp']
-  timestamp = datetime.fromisoformat(timestamp).strftime('%m/%d %H:%M:%S')
+  timestamp = datetime.fromisoformat(timestamp).strftime('%m/%d %I:%M:%S %p')
   for line, dest_map in lines.items():
     dest_list = []
     for dest, times in dest_map.items():
