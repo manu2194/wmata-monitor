@@ -2,6 +2,8 @@ import json
 from datetime import datetime
 import logging
 import requests
+import os
+import pathlib
 from geopy.distance import geodesic
 from utils import get_coordinates_of_address
 
@@ -18,8 +20,10 @@ class WmataLocator:
 
     @staticmethod
     def find_closest_station(current_address: str):
-        logger.debug(f'Opening {STATION_INFORMATION_FILEPATH}...')
-        with open(STATION_INFORMATION_FILEPATH) as f:
+        abs_path_prefix = os.path.split(pathlib.Path(os.path.abspath(__file__)))[0]
+        file_path = abs_path_prefix + '/' + STATION_INFORMATION_FILEPATH
+        logger.debug(f'Opening {file_path}...')
+        with open(os.path.abspath(file_path)) as f:
             station_information = json.load(f)
         stations = station_information['Stations']
 

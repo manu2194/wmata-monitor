@@ -21,7 +21,7 @@ def convert_for_esp32_led_matrix_64_32(train_predictions):
       time_formatted = time_formatted.rjust(5)
       full_string = f'{dest_formatted}{time_formatted}'
       if len(full_string) > 11:
-        raise Exception(f'The length of {full_string=}({len(full_string)}) is greated than 16')
+        raise Exception(f'The length of {full_string}({len(full_string)}) is greated than 16')
       dest_list.append(f'{dest_formatted} {time_formatted}')
     result.append({
       'name': line,
