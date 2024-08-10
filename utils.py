@@ -48,17 +48,34 @@ def convert_for_esp32_led_matrix_64_32(train_predictions):
   for line, dest_map in lines.items():
     dest_list = []
     for dest, times in dest_map.items():
+      
+      # only select first four letters of destination name
       dest_formatted = dest[:4]
+      
+      # replace all spaces
       dest_formatted = dest_formatted.replace(' ', '')
+      
+      # select only first two times, and make them into string
+      # comma separated
       time_formatted = ','.join([str(t) for t in times[:2]])
+      
+      # right-justify by 5 characters
       time_formatted = time_formatted.rjust(5)
-      full_string = f'{dest_formatted}{time_formatted}'
-      if len(full_string) > 11:
-        raise Exception(f'The length of {full_string}({len(full_string)}) is greated than 16')
-      dest_list.append(f'{dest_formatted} {time_formatted}')
+      
+      full_string = f'{dest_formatted} {time_formatted}'
+      
+      # Last validation, ensure that the characters are not greater
+      # than 11 letters
+      # this is expected to never happen, but if it does
+      # we don't wanna mess up the display
+      
+      full_string = full_string[:10]
+      if len(full_string) == 11:
+        raise Exception(f'The length of "{full_string}"({len(full_string)}) should be exactly 11')
+      dest_list.append(full_string.strip())
     result.append({
       'name': line,
-      'destinations': dest_list,
+      'destinations': sorted(dest_list, key=lambda x: x[:1]), # sort by first letter
     })
   
   return {
