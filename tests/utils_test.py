@@ -134,6 +134,20 @@ from utils import convert_for_esp32_led_matrix_64_32
         "timestamp": "01:25:00AM"
     }
     ),
+    
+    ({
+        "error": 'some error',
+        "timestamp": '2024-08-10T01:25:00.293639'
+    },
+        {
+        "line": [
+            {
+                "name": "ERROR",
+            }
+        ],
+        "timestamp": "01:25:00AM"
+    }
+    ),
 ])
 def test_convert_for_esp32_led_matrix_64_32(input, output):
     actual = convert_for_esp32_led_matrix_64_32(input)

@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import os
 import json
 from requests import Request, Session
+from datetime import datetime
 from utils import convert_for_esp32_led_matrix_64_32
 
   
@@ -33,16 +34,23 @@ def main():
   logging.basicConfig(level=getattr(logging, args.log_level))
   logger = logging.getLogger()
 
-  # Create WmataLocator object
-  locator = WmataLocator(API_KEY, args.address)
 
-  train_predictions = locator.find_closest_train_prediction()
+  result_or_error = None
+  try:
+    # Create WmataLocator object
+    locator = WmataLocator(API_KEY, args.address)
+    result_or_error = locator.find_closest_train_prediction()
+  except Exception as e:
+    logger.error(e)
+    result_or_error = {
+      "error": f"Error occured when trying to get fetch train predictions: {e}",
+      "timestamp": datetime.now().isoformat()
+    }
   if args.esp32:
-    result = convert_for_esp32_led_matrix_64_32(train_predictions)
-    result = json.dumps(result)
-    print(result)
+    led_matrix_friendly_format = convert_for_esp32_led_matrix_64_32(result_or_error)
+    print(json.dumps(led_matrix_friendly_format))
   else:
-    print(json.dumps(train_predictions, indent=4))
+    print(json.dumps(result_or_error, indent=4))
 
 if __name__ == "__main__":
   main()
