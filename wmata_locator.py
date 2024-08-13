@@ -1,31 +1,45 @@
-import json
 from datetime import datetime
 import logging
 import requests
-import os
-import pathlib
 from geopy.distance import geodesic
-from utils import get_coordinates_of_address
+from filecache import filecache
+from utils import get_coordinates_of_address, MONTH_IN_SECONDS, DAY_IN_SECONDS, HUMAN_FRIENDLY_TIME_FORMAT
 
 logger = logging.getLogger()
 
 STATION_INFORMATION_FILEPATH = 'station-information.json'
+STATION_LIST_URL = 'http://api.wmata.com/Rail.svc/json/jStations?contentType=application/json&api_key={api_key}'
+STATION_TIMING_URL = 'http://api.wmata.com/Rail.svc/json/jStationTimes?contentType=application/json&api_key={api_key}'
 REAL_TIME_RAIL_PREDICTIONS_URL = 'http://api.wmata.com/StationPrediction.svc/json/GetPrediction/{station_code}?contentType=application/json&api_key={api_key}'
 
 class WmataLocator:
     def __init__(self, api_key: str, current_address: str):
         self.api_key = api_key
-        self.closest_station = WmataLocator.find_closest_station(current_address)
+        self.station_list = self.get_station_list()
+        self.station_timings = self.get_station_timings()
+        self.closest_station = self.find_closest_station(current_address)
         self.closest_station_name = self.closest_station["Name"]
 
-    @staticmethod
-    def find_closest_station(current_address: str):
-        abs_path_prefix = os.path.split(pathlib.Path(os.path.abspath(__file__)))[0]
-        file_path = abs_path_prefix + '/' + STATION_INFORMATION_FILEPATH
-        logger.debug(f'Opening {file_path}...')
-        with open(os.path.abspath(file_path)) as f:
-            station_information = json.load(f)
-        stations = station_information['Stations']
+    @filecache(MONTH_IN_SECONDS)
+    def get_station_list(self):
+        logger.info(f'Getting WMATA station info...')
+        URL = STATION_LIST_URL.format_map({
+            'api_key': self.api_key
+        })
+        response = requests.get(URL)
+        return response.json()
+
+    @filecache(DAY_IN_SECONDS)
+    def get_station_timings(self):
+        logger.info(f'Getting station timings...')
+        URL = STATION_TIMING_URL.format_map({
+            'api_key': self.api_key
+        })
+        response = requests.get(URL)
+        return response.json()
+        
+    def find_closest_station(self, current_address: str):
+        stations = self.station_list['Stations']
 
         # get current coordinates
         logger.info(f'Getting current coordinates')
@@ -47,8 +61,49 @@ class WmataLocator:
         return closest_station
 
     def find_closest_train_prediction(self):
+        '''
+        _summary_
+
+        :return dict: 
+        
+        ```python
+        {
+            "line": {
+                "RD": {
+                    "Forest Glen: [9, 15, 20],
+                    "Shady Grove: [9, 15, 20],
+                }
+            }
+        }
+        ```
+        '''
         # get real time rail predictions
+        current_time = datetime.now()
+        current_day = current_time.strftime('%A')
         logging.info(f'Finding closest train predictions for {self.closest_station_name}...')
+        logging.info(f'Checking for station timings for the {current_day}')
+        closest_station_timing = [station for station in self.station_timings['StationTimes'] if station['StationName'] == self.closest_station_name][0]
+        todays_station_timing = closest_station_timing[current_day]
+        opening_time_hour_and_minute = datetime.strptime(todays_station_timing['OpeningTime'], '%H:%M')
+        first_datetime = current_time.replace(hour=opening_time_hour_and_minute.hour, minute=opening_time_hour_and_minute.minute)
+        
+        closing_times_hour_and_minute = [
+            datetime.strptime(last_train['Time'], '%H:%M') for last_train in todays_station_timing['LastTrains']
+        ]
+        closing_times = [
+            current_time.replace(hour=closing_time_hr_min.hour, minute=closing_time_hr_min.minute) for closing_time_hr_min in closing_times_hour_and_minute
+        ]
+        last_datetime = max(closing_times)
+        
+        if not ( current_time >= first_datetime and current_time <= last_datetime ):
+            if current_time > last_datetime:
+                logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the last train has left the station at {last_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
+            if current_time < first_datetime:
+                logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the first train will start at {first_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
+            return {
+                "line": {},
+                "timestamp": current_time.isoformat()
+            }
         URL = REAL_TIME_RAIL_PREDICTIONS_URL.format_map({
             'api_key': self.api_key,
             'station_code': self.closest_station['Code']
@@ -93,7 +148,7 @@ class WmataLocator:
                 line_map[line][dest] = sorted(line_map[line][dest], key=lambda x: (x is None or x == 'N', x))
         
         # current timestamp
-        now = datetime.now().isoformat()
+        now = current_time.isoformat()
 
         result_dict = {}
         result_dict['line'] = line_map

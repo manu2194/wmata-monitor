@@ -1,6 +1,6 @@
 import json
-import time
 import logging
+from filecache import filecache
 from geopy.geocoders import Nominatim
 from datetime import datetime
 import requests
@@ -8,37 +8,20 @@ import urllib
 
 logger = logging.getLogger()
 
-CACHE_FILE = '.geolocator-cache.json'
-CACHE_EXPIRATION = 3600  # 1 hour in seconds
+MONTH_IN_SECONDS = 31 * 24 * 60 * 60
+DAY_IN_SECONDS = 24 * 60 * 60
 
-def load_cache():
-    try:
-        with open(CACHE_FILE, 'r') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return {}
+HUMAN_FRIENDLY_TIME_FORMAT = '%d %b %I:%M%p'
 
-def save_cache(cache):
-    with open(CACHE_FILE, 'w') as f:
-        json.dump(cache, f)
-
+@filecache(MONTH_IN_SECONDS)
 def get_coordinates_of_address(address):
-    logger.info(f'Loading coordinates for {address} from cache {CACHE_FILE}')
-    cache = load_cache()
-    if address in cache and cache[address]['expiration_time'] > time.time():
-        logger.info(f'Cache hit found for {address} = {cache[address]["value"]}')
-        return cache[address]['value']
-
-    logger.info(f'No cache hit found for {address}. Location using geopy')
-    locator = Nominatim(user_agent="Geopy Library")
-    location = locator.geocode(address)
-    if not location:
-        raise Exception(f'Unable to geocode address {address}')
-    coordinates = (location.latitude, location.longitude)
-    cache[address] = {'expiration_time': time.time() + CACHE_EXPIRATION, 'value': coordinates}
-    logger.info(f'Found coordinates for {address} = {coordinates}. Saving to cache {CACHE_FILE}...')
-    save_cache(cache)
-    return coordinates
+  logger.info(f'Loading coordinates for {address}')
+  locator = Nominatim(user_agent="Geopy Library")
+  location = locator.geocode(address)
+  if not location:
+      raise Exception(f'Unable to geocode address {address}')
+  coordinates = (location.latitude, location.longitude)
+  return coordinates
 
 
 def send_to_esp32(esp32_hostname, payload):

@@ -3,7 +3,7 @@ from wmata_locator import WmataLocator
 from dotenv import load_dotenv
 import os
 import json
-from utils import convert_for_esp32_led_matrix_64_32, send_to_esp32
+from utils import convert_for_esp32_led_matrix_64_32, send_to_esp32, get_coordinates_of_address
 import logging
 from logging.handlers import RotatingFileHandler
 
@@ -24,6 +24,11 @@ load_dotenv()
 def wmata():
   """WMATA station locator."""
   pass
+
+@wmata.command(help='Get coordinates of given address')
+@click.argument("address", type=str)
+def geolocate(address):
+  print(get_coordinates_of_address(address))
 
 @wmata.command(help='Find the train predictions of the closest metro station')
 @click.argument("address", type=str)

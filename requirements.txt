@@ -3,4 +3,4 @@ python-dotenv==0.21.1
 requests==2.31.0
 pytest==8.3.2
 click==8.1.7
-curlify==2.2.1
+filecache==0.81
