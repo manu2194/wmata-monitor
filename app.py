@@ -1,56 +1,77 @@
-import argparse
-import logging
+import click
 from wmata_locator import WmataLocator
 from dotenv import load_dotenv
 import os
+import sys
 import json
 from requests import Request, Session
 from datetime import datetime
-from utils import convert_for_esp32_led_matrix_64_32
+from utils import convert_for_esp32_led_matrix_64_32, send_to_esp32
+import logging
+from logging.handlers import RotatingFileHandler
 
-  
-def main():
-  # Load environment variables
-  load_dotenv()
+
+
+# initialize logging
+LOG_FORMATTER = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(module)s:%(funcName)s[%(lineno)d] - %(message)s')
+root_logger = logging.getLogger()
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(LOG_FORMATTER)
+root_logger.addHandler(console_handler)
+
+
+# load environmnet vars
+load_dotenv()
+
+@click.group()
+def wmata():
+  """WMATA station locator."""
+  pass
+
+@wmata.command(help='Find the train predictions of the closest metro station')
+@click.argument("address", type=str)
+@click.option(
+    "--log-file",
+    type=click.Path(exists=False),
+    help="Write to log file defiled by this path, instead of stdout"
+)
+@click.option(
+    "-l", "--log-level", 
+    type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]), 
+    default="INFO",
+    help="Set logging level (default: INFO)"
+)
+@click.option(
+    "--esp32", is_flag=True, help="Format output for ESP32 LED matrix"
+)
+@click.option(
+    "--esp32-hostname", 
+    envvar='ESP32_HOSTNAME',
+    type=str, 
+    help='hostname of esp32 (for future use)'
+)
+def predict(address, log_level, esp32, esp32_hostname, log_file):
+  """Find closest train prediction for the given address."""
+  # get environment variables
   API_KEY = os.getenv('WMATA_API_KEY')
-
-  # Configure argument parser
-  parser = argparse.ArgumentParser(description="WMATA station locator")
-  parser.add_argument("address", type=str, help="Starting address for search")
-  parser.add_argument(
-      "-l", "--log_level", type=str, default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
-      help="Set logging level (default: INFO)"
-  )
-  parser.add_argument(
-      "--esp32", action='store_true'
-  )
-  parser.add_argument(
-      "--esp32-hostname", type=str, help='hostname of esp32'
-  )
-
-  args = parser.parse_args()
-
+  
+  
   # Configure logging
-  logging.basicConfig(level=getattr(logging, args.log_level))
-  logger = logging.getLogger()
-
-
-  result_or_error = None
-  try:
-    # Create WmataLocator object
-    locator = WmataLocator(API_KEY, args.address)
-    result_or_error = locator.find_closest_train_prediction()
-  except Exception as e:
-    logger.error(e)
-    result_or_error = {
-      "error": f"Error occured when trying to get fetch train predictions: {e}",
-      "timestamp": datetime.now().isoformat()
-    }
-  if args.esp32:
-    led_matrix_friendly_format = convert_for_esp32_led_matrix_64_32(result_or_error)
-    print(json.dumps(led_matrix_friendly_format))
+  root_logger.setLevel(level=getattr(logging, log_level.upper()))
+  if log_file:
+    file_handler = RotatingFileHandler(log_file, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=0)
+    file_handler.setFormatter(LOG_FORMATTER)
+    root_logger.addHandler(file_handler)
+  locator = WmataLocator(API_KEY, address)
+  result = locator.find_closest_train_prediction()
+  
+  if esp32:
+    esp32_friendly_data = convert_for_esp32_led_matrix_64_32(result)
+    send_to_esp32(esp32_hostname, esp32_friendly_data)
+    print(json.dumps(esp32_friendly_data, indent=4))
   else:
-    print(json.dumps(result_or_error, indent=4))
+    print(json.dumps(result, indent=4))
+
 
 if __name__ == "__main__":
-  main()
+  wmata()

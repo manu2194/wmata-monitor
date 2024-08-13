@@ -1,9 +1,10 @@
 import json
 import time
 import logging
-from geopy.distance import geodesic
 from geopy.geocoders import Nominatim
 from datetime import datetime
+import requests
+import urllib
 
 logger = logging.getLogger()
 
@@ -40,7 +41,32 @@ def get_coordinates_of_address(address):
     return coordinates
 
 
+def send_to_esp32(esp32_hostname, payload):
+  if not esp32_hostname.startswith('http://'):
+    esp32_hostname = f'http://{esp32_hostname}'
+  if not isinstance(payload, str):
+    payload = json.dumps(payload)
+  session = requests.Session()
+  session.headers = None
+  try:
+    logger.info(f'Sending POST {payload=} to {esp32_hostname=}...')
+    payload = payload.encode()
+    request = urllib.request.Request(esp32_hostname, payload)
+    response = urllib.request.urlopen(request)
+    response_text = response.read()
+    logger.info(f'{response.status=} - {response_text=}')
+    return True
+  except Exception as e:
+    logger.error(f'Unable to send POST request with data "{payload=}" to "{esp32_hostname=}"', exc_info=e)
+
 def convert_for_esp32_led_matrix_64_32(train_predictions):
+  '''
+  Convert the train predictions to a format that's friendly to be displayed on a 64x32 LED Display
+  hooked to an ESP32 that is designed to parse this specific output
+
+  :param dict train_predictions: The train prediction dictionary
+  :return dict: The esp32 friendly output
+  '''
   result = []
   timestamp = train_predictions['timestamp']
   timestamp = datetime.fromisoformat(timestamp).strftime('%I:%M:%S%p')
