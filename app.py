@@ -2,10 +2,7 @@ import click
 from wmata_locator import WmataLocator
 from dotenv import load_dotenv
 import os
-import sys
 import json
-from requests import Request, Session
-from datetime import datetime
 from utils import convert_for_esp32_led_matrix_64_32, send_to_esp32
 import logging
 from logging.handlers import RotatingFileHandler
