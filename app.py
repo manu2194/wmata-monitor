@@ -83,6 +83,7 @@ def predict(address, log_level, esp32, esp32_hostname, log_file, run_n_times, sl
   
   root_logger.critical(f'Running code {run_n_times} times with {sleep} seconds of delay')
   for i in range(run_n_times):
+    root_logger.critical(f'Running {i+1}/{run_n_times}')
     train_predictions = locator.find_closest_train_prediction()
     if esp32:
       esp32_friendly_data = convert_for_esp32_led_matrix_64_32(train_predictions)
@@ -91,6 +92,7 @@ def predict(address, log_level, esp32, esp32_hostname, log_file, run_n_times, sl
     else:
       print(json.dumps(train_predictions, indent=4))
     if sleep:
+      root_logger.critical(f'Sleeping {sleep} seconds')
       time.sleep(sleep)
 if __name__ == "__main__":
   wmata()
