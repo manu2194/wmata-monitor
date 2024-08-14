@@ -12,6 +12,7 @@ MONTH_IN_SECONDS = 31 * 24 * 60 * 60
 DAY_IN_SECONDS = 24 * 60 * 60
 
 HUMAN_FRIENDLY_TIME_FORMAT = '%d %b %I:%M%p'
+ESP32_FRIENDLY_TIME_FORMAT = '%I:%M:%S%p'
 
 @filecache(MONTH_IN_SECONDS)
 def get_coordinates_of_address(address):
@@ -52,13 +53,20 @@ def convert_for_esp32_led_matrix_64_32(train_predictions):
   '''
   result = []
   timestamp = train_predictions['timestamp']
-  timestamp = datetime.fromisoformat(timestamp).strftime('%I:%M:%S%p')
+  timestamp = datetime.fromisoformat(timestamp).strftime(ESP32_FRIENDLY_TIME_FORMAT)
   if 'error' in train_predictions:
     return {
-      'line': [{'name': 'ERROR'}],
+      'line': [{'name': '', 'destinations': ['!ERROR!']}],
       'timestamp': timestamp
     }
   lines = train_predictions['line']
+  if not lines:
+    first_train = train_predictions['first_train']
+    first_train_formatted = datetime.fromisoformat(first_train).strftime(ESP32_FRIENDLY_TIME_FORMAT)
+    return {
+      'line': [{'name': '', 'destinations': ['NextTrain', first_train_formatted]}],
+      'timestamp': timestamp
+    }
   for line, dest_map in lines.items():
     dest_list = []
     for dest, times in dest_map.items():

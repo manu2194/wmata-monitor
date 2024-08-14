@@ -1,13 +1,15 @@
-import click
-from wmata_locator import WmataLocator
-from dotenv import load_dotenv
-import os
 import json
-from utils import convert_for_esp32_led_matrix_64_32, send_to_esp32, get_coordinates_of_address
 import logging
+import os
+import time
 from logging.handlers import RotatingFileHandler
 
+import click
+from dotenv import load_dotenv
 
+from utils import (convert_for_esp32_led_matrix_64_32,
+                   get_coordinates_of_address, send_to_esp32)
+from wmata_locator import WmataLocator
 
 # initialize logging
 LOG_FORMATTER = logging.Formatter('[%(asctime)s] - [%(levelname)s] - %(module)s:%(funcName)s[%(lineno)d] - %(message)s')
@@ -50,9 +52,20 @@ def geolocate(address):
     "--esp32-hostname", 
     envvar='ESP32_HOSTNAME',
     type=str, 
-    help='hostname of esp32 (for future use)'
+    help='hostname of esp32'
 )
-def predict(address, log_level, esp32, esp32_hostname, log_file):
+@click.option(
+    "-n", "--run-n-times",
+    type=int, 
+    default=1,
+    help='Number of runs to make'
+)
+@click.option(
+    "-s", "--sleep",
+    type=int, 
+    help='Number of seconds to wait between each run'
+)
+def predict(address, log_level, esp32, esp32_hostname, log_file, run_n_times, sleep):
   """Find closest train prediction for the given address."""
   # get environment variables
   API_KEY = os.getenv('WMATA_API_KEY')
@@ -64,16 +77,20 @@ def predict(address, log_level, esp32, esp32_hostname, log_file):
     file_handler = RotatingFileHandler(log_file, mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=0)
     file_handler.setFormatter(LOG_FORMATTER)
     root_logger.addHandler(file_handler)
+    
   locator = WmataLocator(API_KEY, address)
-  result = locator.find_closest_train_prediction()
   
-  if esp32:
-    esp32_friendly_data = convert_for_esp32_led_matrix_64_32(result)
-    send_to_esp32(esp32_hostname, esp32_friendly_data)
-    print(json.dumps(esp32_friendly_data, indent=4))
-  else:
-    print(json.dumps(result, indent=4))
-
-
+  
+  root_logger.critical(f'Running code {run_n_times} times with {sleep} seconds of delay')
+  for i in range(run_n_times):
+    train_predictions = locator.find_closest_train_prediction()
+    if esp32:
+      esp32_friendly_data = convert_for_esp32_led_matrix_64_32(train_predictions)
+      send_to_esp32(esp32_hostname, esp32_friendly_data)
+      print(json.dumps(esp32_friendly_data, indent=4))
+    else:
+      print(json.dumps(train_predictions, indent=4))
+    if sleep:
+      time.sleep(sleep)
 if __name__ == "__main__":
   wmata()
