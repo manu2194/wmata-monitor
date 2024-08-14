@@ -102,7 +102,9 @@ class WmataLocator:
                 logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the first train will start at {first_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
             return {
                 "line": {},
-                "timestamp": current_time.isoformat()
+                "timestamp": current_time.isoformat(),
+                "first_train": first_datetime.isoformat(),
+                "last_train": last_datetime.isoformat()
             }
         URL = REAL_TIME_RAIL_PREDICTIONS_URL.format_map({
             'api_key': self.api_key,
@@ -153,4 +155,6 @@ class WmataLocator:
         result_dict = {}
         result_dict['line'] = line_map
         result_dict['timestamp'] = now
+        result_dict["first_train"] = first_datetime.isoformat()
+        result_dict["last_train"] = last_datetime.isoformat()
         return result_dict
