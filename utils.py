@@ -9,12 +9,13 @@ import urllib
 logger = logging.getLogger()
 
 MONTH_IN_SECONDS = 31 * 24 * 60 * 60
+YEAR_IN_SECONDS = MONTH_IN_SECONDS * 12
 DAY_IN_SECONDS = 24 * 60 * 60
 
 HUMAN_FRIENDLY_TIME_FORMAT = '%d %b %I:%M%p'
 ESP32_FRIENDLY_TIME_FORMAT = '%I:%M:%S%p'
 
-@filecache(MONTH_IN_SECONDS)
+@filecache(YEAR_IN_SECONDS)
 def get_coordinates_of_address(address):
   logger.info(f'Loading coordinates for {address}')
   locator = Nominatim(user_agent="Geopy Library")
