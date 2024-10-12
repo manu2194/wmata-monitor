@@ -2,7 +2,6 @@ from datetime import datetime
 import logging
 import requests
 from geopy.distance import geodesic
-from filecache import filecache
 from cache import jsonfilecache
 from utils import get_coordinates_of_address, MONTH_IN_SECONDS, DAY_IN_SECONDS, HUMAN_FRIENDLY_TIME_FORMAT
 
