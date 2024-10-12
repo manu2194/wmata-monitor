@@ -95,17 +95,18 @@ class WmataLocator:
         ]
         last_datetime = max(closing_times)
         
-        if not ( current_time >= first_datetime and current_time <= last_datetime ):
-            if current_time > last_datetime:
-                logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the last train has left the station at {last_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
-            if current_time < first_datetime:
-                logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the first train will start at {first_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
-            return {
-                "line": {},
-                "timestamp": current_time.isoformat(),
-                "first_train": first_datetime.isoformat(),
-                "last_train": last_datetime.isoformat()
-            }
+        # if not ( current_time >= first_datetime and current_time <= last_datetime ):
+        #     if current_time > last_datetime:
+        #         logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the last train has left the station at {last_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
+        #     if current_time < first_datetime:
+        #         logger.info(f"The current time {current_time.strftime(HUMAN_FRIENDLY_TIME_FORMAT)} but the first train will start at {first_datetime.strftime(HUMAN_FRIENDLY_TIME_FORMAT)}")
+        #     return {
+        #         "line": {},
+        #         "timestamp": current_time.isoformat(),
+        #         "first_train": first_datetime.isoformat(),
+        #         "last_train": last_datetime.isoformat()
+        #     }
+        
         URL = REAL_TIME_RAIL_PREDICTIONS_URL.format_map({
             'api_key': self.api_key,
             'station_code': self.closest_station['Code']
