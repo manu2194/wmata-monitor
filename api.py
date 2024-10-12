@@ -50,4 +50,4 @@ if __name__ == '__main__':
     file_handler = RotatingFileHandler('wmata.log', mode='a', maxBytes=1000000, backupCount=1, encoding=None, delay=0)
     file_handler.setFormatter(LOG_FORMATTER)
     root_logger.addHandler(file_handler)
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)
