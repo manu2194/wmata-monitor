@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 import requests
 from geopy.distance import geodesic
@@ -150,11 +150,11 @@ class WmataLocator:
                 line_map[line][dest] = sorted(line_map[line][dest], key=lambda x: (x is None or x == 'N', x))
         
         # current timestamp
-        now = current_time.isoformat()
+        now_as_utc = current_time.astimezone(timezone.utc).isoformat()
 
         result_dict = {}
         result_dict['line'] = line_map
-        result_dict['timestamp'] = now
+        result_dict['timestamp'] = now_as_utc
         result_dict["first_train"] = first_datetime.isoformat()
         result_dict["last_train"] = last_datetime.isoformat()
         return result_dict
