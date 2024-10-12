@@ -3,6 +3,7 @@ import logging
 import requests
 from geopy.distance import geodesic
 from filecache import filecache
+from cache import jsonfilecache
 from utils import get_coordinates_of_address, MONTH_IN_SECONDS, DAY_IN_SECONDS, HUMAN_FRIENDLY_TIME_FORMAT
 
 logger = logging.getLogger()
@@ -20,7 +21,7 @@ class WmataLocator:
         self.closest_station = self.find_closest_station(current_address)
         self.closest_station_name = self.closest_station["Name"]
 
-    @filecache(MONTH_IN_SECONDS)
+    @jsonfilecache(MONTH_IN_SECONDS)
     def get_station_list(self):
         logger.info(f'Getting WMATA station info...')
         URL = STATION_LIST_URL.format_map({
@@ -29,7 +30,7 @@ class WmataLocator:
         response = requests.get(URL)
         return response.json()
 
-    @filecache(DAY_IN_SECONDS)
+    @jsonfilecache(DAY_IN_SECONDS)
     def get_station_timings(self):
         logger.info(f'Getting station timings...')
         URL = STATION_TIMING_URL.format_map({

@@ -1,6 +1,6 @@
 import json
 import logging
-from filecache import filecache
+from cache import jsonfilecache
 from geopy.geocoders import Nominatim
 from datetime import datetime
 import requests
@@ -15,7 +15,7 @@ DAY_IN_SECONDS = 24 * 60 * 60
 HUMAN_FRIENDLY_TIME_FORMAT = '%d %b %I:%M%p'
 ESP32_FRIENDLY_TIME_FORMAT = '%I:%M:%S%p'
 
-@filecache(YEAR_IN_SECONDS)
+@jsonfilecache(YEAR_IN_SECONDS)
 def get_coordinates_of_address(address):
   logger.info(f'Loading coordinates for {address}')
   locator = Nominatim(user_agent="Geopy Library")
