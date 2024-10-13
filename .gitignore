@@ -166,3 +166,5 @@ cython_debug/
 *.cache.db
 playground.py
 *.cache.json
+*.log
+*.log.*
